@@ -27,7 +27,8 @@ contract Reksadana is ERC20 {
     error ZeroAmount();
 
     // events
-
+    event Deposit(address indexed user, uint256 amount, uint256 shares);
+    event Withdraw(address indexed user, uint256 shares, uint256 amount);
 
     address uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
     // tokens
@@ -100,13 +101,18 @@ contract Reksadana is ERC20 {
             amountOutMinimum: 0,
             sqrtPriceLimitX96: 0
         });
-        ISwapRouter(uniswapRouter).exactInputSingle(params);    
+        ISwapRouter(uniswapRouter).exactInputSingle(params);
+
+        // emit event deposit
+        emit Deposit(msg.sender, amount, shares);    
     }
     function withdraw(uint256 shares)public{
         // validasi shares
         if (shares == 0) revert ZeroAmount();
         if (shares > balanceOf(msg.sender)) revert InsufficientShares();
         // hitung proporsi
+        uint256 PROPORTION_SCALED = 1e18;
+        uint256 totalShares = totalSupply();
         uint256 proportion = (shares * PROPORTION_SCALED) / totalShares;
 
         uint256 amountWbtc= (IERC20(wbtc).balanceOf(address(this)) * proportion) / PROPORTION_SCALED;
@@ -146,5 +152,7 @@ contract Reksadana is ERC20 {
         // transfer usdc ke user
         IERC20(usdc).transfer(msg.sender, amountUsdc);
         
+        // emit event withdraw
+        emit Withdraw(msg.sender, shares, amountUsdc);
     }
 }
