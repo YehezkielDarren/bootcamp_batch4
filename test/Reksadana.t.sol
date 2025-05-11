@@ -17,11 +17,20 @@ contract ReksadanaTest is Test {
         reksadana = new Reksadana();
     }
 
-    function testTotalAsset() public {
+    function test_totalAsset() public {
         deal(weth, address(reksadana),10e18); // 10 weth dimasukkan ke contract reksadana
         deal(wbtc, address(reksadana),1e8); // 1 wbtc dimasukkan ke contract reksadana
-        
+
         uint256 totalAsset = reksadana.totalAsset();
         console.log("Total Asset: ", totalAsset);
+    }
+
+    function test_deposit() public {
+        deal(usdc, address(this),1000e6); // 10 weth dimasukkan ke contract reksadana
+        IERC20(usdc).approve(address(reksadana), 1000e6);
+        reksadana.deposit(1000e6);
+
+        console.log("Total Asset: ", reksadana.totalAsset());
+        console.log("User shares: ",IERC20(address(reksadana)).balanceOf(address(this)));
     }
 }

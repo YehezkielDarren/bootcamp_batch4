@@ -22,6 +22,8 @@ interface IAggregatorV3 {
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 }
 contract Reksadana is ERC20 {
+
+    error ZeroAmount();
     address uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
     // tokens
     address weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
@@ -49,5 +51,51 @@ contract Reksadana is ERC20 {
         uint256 totalWbtcAsset= (IERC20(wbtc).balanceOf(address(this)) * wbtcPriceInUsd) / 1e8;
 
         return totalWethAsset + totalWbtcAsset;
+    }
+    function deposit(uint256 amount) public{
+        // validasi deposit
+        if (amount == 0) revert ZeroAmount();
+        uint256 totalAsset=totalAsset();
+        uint256 totalShares=totalSupply();
+        
+        uint256 shares=0;
+        if (totalShares == 0) {
+            shares = amount;
+        } else {
+            shares = (amount * totalShares) / totalAsset;
+        }
+        // mint shares to user
+        IERC20(usdc).transferFrom(msg.sender, address(this), amount);
+        _mint(msg.sender, shares);
+        uint256 amountIn= amount/2;
+
+        // swap usdc ke weth
+        IERC20(usdc).approve(uniswapRouter, amountIn);
+
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: usdc,
+            tokenOut: weth,
+            fee: 3000,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: 0,
+            sqrtPriceLimitX96: 0
+        });
+        ISwapRouter(uniswapRouter).exactInputSingle(params);
+
+        // swap usdc ke wbtc
+        IERC20(usdc).approve(uniswapRouter, amountIn);
+        params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: usdc,
+            tokenOut: wbtc,
+            fee: 3000,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: 0,
+            sqrtPriceLimitX96: 0
+        });
+    
     }
 }
