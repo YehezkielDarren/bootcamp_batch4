@@ -22,8 +22,13 @@ interface IAggregatorV3 {
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 }
 contract Reksadana is ERC20 {
-    error NotEnoughShares();
+    // errors
+    error InsufficientShares();
     error ZeroAmount();
+
+    // events
+
+
     address uniswapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
     // tokens
     address weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
@@ -100,10 +105,7 @@ contract Reksadana is ERC20 {
     function withdraw(uint256 shares)public{
         // validasi shares
         if (shares == 0) revert ZeroAmount();
-        uint256 totalShares=totalSupply();
-        uint256 PROPORTION_SCALED= 1e18;
-        // validasi shares
-        if (shares > totalShares) revert NotEnoughShares();
+        if (shares > balanceOf(msg.sender)) revert InsufficientShares();
         // hitung proporsi
         uint256 proportion = (shares * PROPORTION_SCALED) / totalShares;
 
@@ -126,7 +128,7 @@ contract Reksadana is ERC20 {
             sqrtPriceLimitX96: 0
         });
         ISwapRouter(uniswapRouter).exactInputSingle(params);
-        
+
         // swap weth ke usdc
         IERC20(weth).approve(uniswapRouter, amountWeth);
         params = ISwapRouter.ExactInputSingleParams({
